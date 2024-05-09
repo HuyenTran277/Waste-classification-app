@@ -1,0 +1,59 @@
+from google.colab import drive
+drive.mount('/content/drive')                                                                                                                                                 import numpy as np
+import pandas as pd
+import cv2
+import matplotlib.pyplot as plt
+from PIL import Image
+url='/content/drive/MyDrive/Garbage classification'
+img_size=224
+batch=64                                                                                                                                                                                       from keras.preprocessing.image import ImageDataGenerator
+train_datagen=ImageDataGenerator(rescale=1./255,shear_range=0.2,zoom_range=0.2,horizontal_flip=True,validation_split=0.2)
+test_datagen=ImageDataGenerator(rescale=1./255,validation_split=0.2)
+train_datagen=train_datagen.flow_from_directory(url,target_size=(img_size,img_size),subset='training',batch_size=batch)
+test_datagen=test_datagen.flow_from_directory(url,target_size=(img_size,img_size),subset='validation',batch_size=batch)                                                                                                 import os
+url = "/content/drive/MyDrive/Garbage classification"
+url = os.path.normpath(url)
+if not os.path.exists(url):
+    print(f"The directory {url} does not exist.")
+else:
+    for class_ in os.listdir(url):
+        count_class = 0
+        class_path = os.path.join(url, class_)
+        # Check if the path is a directory
+        if os.path.isdir(class_path):
+            for photo in os.listdir(class_path):
+                count_class += 1
+            print(f"{class_} has {count_class} images.")                                                                                                                                                           from keras.models import Sequential
+from keras.layers import Conv2D,MaxPooling2D,Dense,Flatten
+model=Sequential()
+model.add(Conv2D(64,activation='relu',kernel_size=(5,5),padding='same',input_shape=(224,224,3)))
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Conv2D(64,activation='relu',kernel_size=(5,5),padding='same'))
+model.add(MaxPooling2D(pool_size=(2,2),strides=(2,2)))
+model.add(Conv2D(64,activation='relu',kernel_size=(5,5),padding='same'))
+model.add(MaxPooling2D(pool_size=(2,2),strides=(2,2)))
+model.add(Flatten())
+model.add(Dense(512))
+model.add(Dense(512,activation='relu'))
+model.add(Dense(400,activation='relu'))
+model.add(Dense(300,activation='relu'))
+model.add(Dense(6,activation='softmax'))
+from keras.optimizers import Adam
+model.compile(optimizer=Adam(),loss='categorical_crossentropy',metrics=['accuracy'])
+model.fit(train_datagen,epochs=100,validation_data=test_datagen)                                                                                       from tensorflow.keras.models import load_model
+model.save('rac.h5')
+saved_model = load_model('rac.h5')
+train_datagen.class_indices                                                                                                                                                  import numpy as np
+from keras.preprocessing import image
+list_=['giấy','hộp sữa giấy','nhựa tái chế','rác thải còn lại','thực phẩm thừa','kim loại']
+test_image=image.load_img('/content/sua-tuoi-tiet-trung-vinamilk-100-co-duong-hop-giay-1l-1630061314.jpg',target_size=(224,224))
+plt.imshow(test_image)
+test_image=image.img_to_array(test_image)
+test_image=np.expand_dims(test_image,axis=0)
+result=saved_model.predict(test_image)
+print(result)
+i=0
+for i in range(len(result[0])):
+  if(result[0][i]==1):
+    print(list_[i])
+    break
