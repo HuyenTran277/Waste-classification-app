@@ -1,0 +1,86 @@
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import *
+from PIL import ImageTk, Image
+import numpy as np
+from tensorflow.keras.models import load_model
+
+# Load the pre-trained model
+model = load_model(r'C:\Users\ADMIN\OneDrive\Documents\Project\rác\rac.h5')
+
+# Define the classes
+classes = {
+    0: 'giấy',
+    1: 'hộp sữa giấy',
+    2: 'nhựa tái chế',
+    3: 'kim loại',
+    4: 'thực phẩm thừa',
+    5: 'rác thải còn lại',
+}
+
+# Create the application
+top = tk.Tk()
+top.geometry('800x600')
+top.title('Trash Classification')
+top.configure(background='#008080')
+
+# Create labels and buttons
+label = Label(top, background='#008080', font=('arial', 15, 'bold'))
+sign_image = Label(top)
+
+# Function to classify an image
+def classify(file_path):
+    global label_packed
+    image = Image.open(file_path)
+    image = image.resize((224, 224))  # Corrected resize method call
+    image = np.expand_dims(image, axis=0)
+    image = np.array(image)
+    image = image / 255.0
+    pred = model.predict([image])[0]  # Fixed predict call
+    predicted_class = np.argmax(pred)
+    sign = classes[predicted_class]
+    print(sign)
+    label.configure(foreground='#011638', text=sign)
+
+# Function to show the classify button
+def show_classify_button(file_path):
+    classify_b = Button(top, text="Classify", command=lambda: classify(file_path),
+                        padx=10, pady=5)
+    classify_b.configure(background='#364156', foreground='white',
+                         font=('arial', 10, 'bold'))
+    classify_b.place(relx=0.79, rely=0.46)
+
+# Function to upload an image
+def upload_image():
+    try:
+        file_path = filedialog.askopenfilename()
+        if not file_path:
+            return
+        uploaded = Image.open(file_path)
+        uploaded.thumbnail(((top.winfo_width() / 2.25), (top.winfo_height() / 2.25)))
+        im = ImageTk.PhotoImage(uploaded)
+        sign_image.configure(image=im)
+        sign_image.image = im
+        label.configure(text='')
+        show_classify_button(file_path)
+    except:
+        pass
+
+# Create the upload button
+upload = Button(top, text="Upload image", command=upload_image,
+                padx=10, pady=5)
+upload.configure(background='#354156', foreground="black",
+                 font=('arial', 10, 'bold'))
+upload.pack(side=BOTTOM, pady=50)
+
+# Layout elements
+sign_image.pack(side=BOTTOM, expand=True)
+label.pack(side=BOTTOM, expand=True)
+
+# Create and pack the heading label
+heading = Label(top, text="Trash Classification", pady=20, font=('arial', 20, 'bold'))
+heading.configure(background='#CDCDCD', foreground='black')
+heading.pack()
+
+# Start the application
+top.mainloop()
